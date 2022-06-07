@@ -3,6 +3,7 @@
 #define LLUVIA A4
 #define RESIST_SERIE 10000
 #define BATERIA A5
+#define PANTALLA A15
 #include <math.h>
 #include <stdio.h>
 // liberías para manipular PCD8544
@@ -126,7 +127,7 @@ void loop() {
   led.loop(); //LED control
   servo_pose(); // Servo Control
   // switch deshabilitar/habilitar PCD
-  int switchLCD = digitalRead(A15);
+  int switchLCD = digitalRead(PANTALLA);
 
   // Sensor humedad
   int humid = analogRead(HUMEDAD);
@@ -166,7 +167,7 @@ void loop() {
   // BATERÍA
   float v_bateria = analogRead(BATERIA)*4.8/1023;   // obtiene voltaje de 12 V divido por 1/2.5
   v_bateria = v_bateria*2.5;             //  voltaje batería                                                              
-  Serial.println(v_bateria);
+  //Serial.println(v_bateria);
   battery.loop();
   
   // batería baja
@@ -210,11 +211,12 @@ void loop() {
     led.blink(10,10);
     if(timer_usart.hasPassed(6)){
         String temp_buffer = String(celsius, 1);
-        //String hum_buffer = String(hummid, 3);
-        //String light_buffer = String(lux, 3); 
+        String hum_buffer = String(humid, 3);
+        String light_buffer = String(lux, 3); 
         String wind_buffer = String(wind_speed, 3);
-        //String rain_buffer = String(rain, 3);
-        String line = temp_buffer + "/" + wind_buffer;
+        String rain_buffer = String(lluvia, 1);
+        String battery_buffer = String(v_bateria, 3);
+        String line = temp_buffer + "/" + hum_buffer + "/" + light_buffer + "/" + wind_buffer + "/" + rain_buffer + "/" + battery_buffer;
         Serial.println(line);
         timer_usart.restart();
     }

@@ -42,9 +42,10 @@ while(1):
         split = decode.split('/')
         dict["Temperature"] = split[0]
         dict["Humididy"] = split[1]
-        #dict["Intensity of light(cd)"] = input[2]
-        #dict["Wind speed (m/s)"] = input[3]
-        #dict["Active Rain (Yes/No)"] = input [4]
+        dict["Intensity of light(cd)"] = split[2]
+        dict["Wind speed (m/s)"] = split[3]
+        dict["Active Rain (Yes/No)"] = split [4]
+        dict["Battery Level"] = split[5]
         output = json.dumps(dict)
         print(output)
         client.publish(topic, output)
