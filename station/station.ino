@@ -1,8 +1,20 @@
+#define HUMEDAD A1
+#define LUZ A3
+#define LLUVIA A4
+#define RESIST_SERIE 10000
+#define BATERIA A5
+#include <math.h>
+#include <stdio.h>
+// liberías para manipular PCD8544
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_PCD8544.h>
+// librerias para el resto del sistema 
 #include <EEPROM.h>
 #include <Chrono.h>
-#include <stdio.h>
 #include <ezOutput.h>
 #include <Servo.h>
+#include <LowPower.h>
 
 const int Rc = 10000; // Circuit resistance value
 const int Vcc = 5; 
@@ -31,6 +43,7 @@ Chrono timer_eeprom(Chrono::SECONDS);
 Chrono timer_usart(Chrono::SECONDS);
 int eeprom_address = 0;
 ezOutput led(led_pin);
+ezOutput battery(7);  // instancia objeto ezOutput
 
 
 void memory_save(float temp, float hum, float intensity, float wind_speed, float rain){
@@ -76,8 +89,18 @@ void servo_pose(){
   
 }
 
+// pines de PCD a arduino: SCLK = 8, DIN = 9, D/C = 10, CS = 11, RST = 12
+Adafruit_PCD8544 display = Adafruit_PCD8544(8, 9, 10, 11, 12);
+
+void wakeup()
+{  
+  // rutina vacía de interrupción de despierto de pin 18
+}
+
 void setup() {
+  // put your setup code here, to run once:
   Serial.begin(9600);
+  pinMode(1, OUTPUT);
   pinMode(switch_USART, INPUT);
   pinMode(led_pin, OUTPUT);
   pinMode(temp_sensor, INPUT);
@@ -89,11 +112,81 @@ void setup() {
   pinMode(output_servoV, OUTPUT);
   servoV.attach(output_servoV);
   servoH.attach(output_servoH);
+  // Activar display
+  display.begin();
+  digitalWrite(18, HIGH); // empieza en ALTO para que no esté en low power
+}
+
+void loop() {
+  
+  
 }
 
 void loop() {
   led.loop(); //LED control
   servo_pose(); // Servo Control
+  // switch deshabilitar/habilitar PCD
+  int switchLCD = digitalRead(A15);
+
+  // Sensor humedad
+  int humid = analogRead(HUMEDAD);
+  humid = map(humid, 0, 1023, 0, 100);  // convertir tensión a 0-100 %
+  //Serial.print("Humedad: "); Serial.println(humid);
+  //delay(500);
+
+  // Sensor luz
+  float vLuz = analogRead(LUZ)*5.0/1023.0;
+  float rLuz = vLuz*RESIST_SERIE/(5-vLuz);
+  float lux = pow(rLuz, -1.162)*pow(10.0, 5.935);  // fórmula interpolada de R a lux
+
+  // sensor lluvia
+  int lluvia = digitalRead(LLUVIA);
+
+  // Imprimir en LCD
+  display.clearDisplay();  //clears display each time loop starts over
+  display.setCursor(0,0);
+  display.print("Humedad: "); display.println(humid);  // muestra humedad
+  display.print(lux); display.println(" lux");  // muestra luz en lux
+  if (!lluvia){
+    display.println("Hay lluvia");
+  }
+  else {
+    display.println("No hay lluvia");
+  }
+
+  // deshabilita despliegue de info (muestra display vacío)
+  if (switchLCD){
+    display.clearDisplay();
+    display.display();  
+  }
+  else {
+    display.display();
+  }
+
+  // BATERÍA
+  float v_bateria = analogRead(BATERIA)*4.8/1023;   // obtiene voltaje de 12 V divido por 1/2.5
+  v_bateria = v_bateria*2.5;             //  voltaje batería                                                              
+  Serial.println(v_bateria);
+  battery.loop();
+  
+  // batería baja
+  if (v_bateria <= 6){          
+    battery.blink(500, 250);    // parpadeo led alerta
+    digitalWrite(18, LOW); // pin 18 en LOW --> INT no activa, no se despierta de powerdown
+    //Serial.println("Batería baja");
+  } else {
+    battery.low();
+    digitalWrite(18, HIGH);  // interrupt que despierta de low power activo
+  }
+
+  // LOW POWER MODE: Cuando batería baja, INT pin 18 se desactiva y se mantiene en PowerDown.
+  attachInterrupt(digitalPinToInterrupt(18), wakeup, HIGH);  // pin 18 = INT0
+  LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);  // se despierta cuando pin 18 es HIGH: interrupción activa (default)
+  detachInterrupt(digitalPinToInterrupt(18));         // Disable external pin interrupt en pin 18
+   
+  delay(500); // ¿Este delay es necesario?
+  
+  // Cambios luis
   int USART_enable = digitalRead(switch_USART);
   float raw_temp = analogRead(temp_sensor);
   float raw_wind = analogRead(wind_sensor);
