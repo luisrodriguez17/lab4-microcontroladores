@@ -2,6 +2,7 @@
 #define LUZ A3
 #define LLUVIA A4
 #define RESIST_SERIE 10000
+#define BATERIA A5
 #include <math.h>
 
 // liberías para manipular PCD8544
@@ -13,6 +14,7 @@
 #include <Chrono.h>
 #include <stdio.h>
 #include <ezOutput.h>
+#include <LowPower.h>
 
 const int Rc = 10000; //valor de la resistencia
 const int Vcc = 5;
@@ -29,6 +31,8 @@ Chrono timer_eeprom(Chrono::SECONDS);
 Chrono timer_usart(Chrono::SECONDS);
 int eeprom_address = 0;
 ezOutput led(led_pin);
+ezOutput battery(7);  // instancia objeto ezOutput
+
 
 void memory_save(float temp, float hum, float intensity, float wind_speed, float rain){
    if(eeprom_address >= EEPROM.length()){
@@ -66,15 +70,19 @@ void memory_save(float temp, float hum, float intensity, float wind_speed, float
 // pines de PCD a arduino: SCLK = 8, DIN = 9, D/C = 10, CS = 11, RST = 12
 Adafruit_PCD8544 display = Adafruit_PCD8544(8, 9, 10, 11, 12);
 
+void wakeup()
+{  
+  // rutina vacía de interrupción de despierto de pin 18
+}
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   pinMode(1, OUTPUT);
   pinMode(switch_USART, INPUT);
-
   // Activar display
   display.begin();
+  digitalWrite(18, HIGH); // empieza en ALTO para que no esté en low power
 }
 
 void loop() {
@@ -115,6 +123,27 @@ void loop() {
   else {
     display.display();
   }
+
+  // BATERÍA
+  float v_bateria = analogRead(BATERIA)*4.8/1023;   // obtiene voltaje de 12 V divido por 1/2.5
+  v_bateria = v_bateria*2.5;             //  voltaje batería                                                              
+  Serial.println(v_bateria);
+  battery.loop();
+  
+  // batería baja
+  if (v_bateria <= 6){          
+    battery.blink(500, 250);    // parpadeo led alerta
+    digitalWrite(18, LOW); // pin 18 en LOW --> INT no activa, no se despierta de powerdown
+    //Serial.println("Batería baja");
+  } else {
+    battery.low();
+    digitalWrite(18, HIGH);  // interrupt que despierta de low power activo
+  }
+
+  // LOW POWER MODE: Cuando batería baja, INT pin 18 se desactiva y se mantiene en PowerDown.
+  attachInterrupt(digitalPinToInterrupt(18), wakeup, HIGH);  // pin 18 = INT0
+  LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);  // se despierta cuando pin 18 es HIGH: interrupción activa (default)
+  detachInterrupt(digitalPinToInterrupt(18));         // Disable external pin interrupt en pin 18
    
   delay(500);
   
