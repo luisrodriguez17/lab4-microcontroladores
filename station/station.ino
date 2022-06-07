@@ -2,18 +2,31 @@
 #include <Chrono.h>
 #include <stdio.h>
 #include <ezOutput.h>
+#include <Servo.h>
 
-const int Rc = 10000; //valor de la resistencia
-const int Vcc = 5;
+const int Rc = 10000; // Circuit resistance value
+const int Vcc = 5; 
+// Pines utilizados
 const int temp_sensor = A0;
 const int wind_sensor = A2;
 const int switch_USART = 22;
+const int input_servoV = A15;
+const int input_servoH = A14;
+const int output_servoV = 9;
+const int output_servoH = 10;
 const int led_pin = 0;
+// Parameters for calculating the temperature
 float A = 0.0006973550913078027;
 float B = 0.00028800736970464863;
 float C = 5.400097451986799e-9;
-float K = 2.5; //factor de disipacion en mW/C
+float K = 2.5; //Disipation factor on mW/C
+// Sensors and actuators
 float wind_speed = 0; // m/s
+int servoV_pose = 0;
+int servoH_pose = 0;
+// Estructuras
+Servo servoH;
+Servo servoV;
 Chrono timer_eeprom(Chrono::SECONDS);
 Chrono timer_usart(Chrono::SECONDS);
 int eeprom_address = 0;
@@ -52,15 +65,35 @@ void memory_save(float temp, float hum, float intensity, float wind_speed, float
   
   
 }
+ // Function for controling servo
+void servo_pose(){
+  servoH_pose = analogRead(input_servoH);
+  servoV_pose = analogRead(input_servoV);
+  servoH_pose = map(servoH_pose, 0, 1023, 0, 180);
+  servoV_pose = map(servoV_pose, 0, 1023, 0, 180);   
+  servoH.write(servoH_pose);
+  servoV.write(servoV_pose);
+  
+}
 
 void setup() {
   Serial.begin(9600);
   pinMode(switch_USART, INPUT);
-  //pinMode(led_pin, OUTPUT);
+  pinMode(led_pin, OUTPUT);
+  pinMode(temp_sensor, INPUT);
+  pinMode(wind_sensor, INPUT);
+  // Servomotor
+  pinMode(input_servoV, INPUT);
+  pinMode(input_servoH, INPUT);
+  pinMode(output_servoV, OUTPUT);
+  pinMode(output_servoV, OUTPUT);
+  servoV.attach(output_servoV);
+  servoH.attach(output_servoH);
 }
 
 void loop() {
-  led.loop();
+  led.loop(); //LED control
+  servo_pose(); // Servo Control
   int USART_enable = digitalRead(switch_USART);
   float raw_temp = analogRead(temp_sensor);
   float raw_wind = analogRead(wind_sensor);
@@ -81,7 +114,7 @@ void loop() {
       memory_save(celsius, 10.0 , 10.0, wind_speed, 1.0);
   }
   if(USART_enable == 1){
-    led.blink(20,20);
+    led.blink(10,10);
     if(timer_usart.hasPassed(6)){
         String temp_buffer = String(celsius, 1);
         //String hum_buffer = String(hummid, 3);
@@ -92,5 +125,7 @@ void loop() {
         Serial.println(line);
         timer_usart.restart();
     }
-  }
+  }else{
+    led.low();
+    }
 }
