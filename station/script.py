@@ -28,6 +28,7 @@ broker ="iot.eie.ucr.ac.cr"
 port = 1883
 topic = "v1/devices/me/telemetry"
 device = "Jnna3Y5vNYCHEbEk3XlV"
+#device = "8RLko5j9POK6dxmleE7J"
 client.username_pw_set(device)
 client.connect(broker, port)
 dict = dict()
@@ -41,7 +42,7 @@ while(1):
         decode = input.decode().replace('\r\n', '')
         split = decode.split('/')
         dict["Temperature"] = split[0]
-        dict["Humididy"] = split[1]
+        dict["Humidity"] = split[1]
         dict["Intensity of light(cd)"] = split[2]
         dict["Wind speed (m/s)"] = split[3]
         dict["Active Rain (Yes/No)"] = split [4]
