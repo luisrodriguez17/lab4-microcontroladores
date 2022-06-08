@@ -52,10 +52,10 @@ while(1):
         else:
             dict["Active Rain (Yes/No)"] = "No"
         
-        if(int(split[5] == 1)):
-            dict["Battery Level"] = "Low Battery"
+        if(split[5] == '0'):
+            dict["Battery Level"] = "OK"
         else:
-            dict["Battery Level"] = "Baterry Ok"
+            dict["Battery Level"] = "Low battery"
         output = json.dumps(dict)
         print(output)
         client.publish(topic, output)
