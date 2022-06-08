@@ -209,10 +209,10 @@ void loop() {
     led.blink(10,10);
     if(timer_usart.hasPassed(6)){
         String temp_buffer = String(celsius, 1);
-        String hum_buffer = String(humid, 3);
+        String hum_buffer = String(float(humid), 3);
         String light_buffer = String(lux, 3); 
         String wind_buffer = String(wind_speed, 3);
-        String rain_buffer = String(lluvia, 1);
+        String rain_buffer = String(lluvia, 2);
         String battery_buffer = String(low_bat, 3);
         String line = temp_buffer + "/" + hum_buffer + "/" + light_buffer + "/" + wind_buffer + "/" + rain_buffer + "/" + battery_buffer;
         Serial.println(line);

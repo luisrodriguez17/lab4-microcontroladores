@@ -16,6 +16,8 @@ def on_disconnect(client, userdata, rc):
 def on_publish(client, userdata, mid):
     print("Message: ", mid, " has left the client")
 
+
+
 PuertoSerial = serial.Serial(port = '/tmp/ttyS1') 
 print("Connected to serial port")
 client = mqtt.Client("B76547")
@@ -45,8 +47,15 @@ while(1):
         dict["Humidity"] = split[1]
         dict["Intensity of light(cd)"] = split[2]
         dict["Wind speed (m/s)"] = split[3]
-        dict["Active Rain (Yes/No)"] = split [4]
-        dict["Battery Level"] = split[5]
+        if(int(split [4]) == 0):
+            dict["Active Rain (Yes/No)"] = "Yes"
+        else:
+            dict["Active Rain (Yes/No)"] = "No"
+        
+        if(int(split[5] == 1)):
+            dict["Battery Level"] = "Low Battery"
+        else:
+            dict["Battery Level"] = "Baterry Ok"
         output = json.dumps(dict)
         print(output)
         client.publish(topic, output)
