@@ -213,7 +213,7 @@ void loop() {
         String light_buffer = String(lux, 3); 
         String wind_buffer = String(wind_speed, 3);
         String rain_buffer = String(lluvia, 2);
-        String battery_buffer = String(low_bat, 3);
+        String battery_buffer = String(low_bat, 2);
         String line = temp_buffer + "/" + hum_buffer + "/" + light_buffer + "/" + wind_buffer + "/" + rain_buffer + "/" + battery_buffer;
         Serial.println(line);
         timer_usart.restart();
