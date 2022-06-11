@@ -207,7 +207,7 @@ void loop() {
   }
   if(USART_enable == 1){
     led.blink(10,10);
-    if(timer_usart.hasPassed(6)){
+    if(timer_usart.hasPassed(600)){
         String temp_buffer = String(celsius, 1);
         String hum_buffer = String(float(humid), 3);
         String light_buffer = String(lux, 3); 
